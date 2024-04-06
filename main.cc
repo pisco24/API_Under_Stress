@@ -1,7 +1,12 @@
 // main.cc 
 #include <lithium_http_server.hh>
+#include <lithium_json.hh>
+#include <symbols.hh>
 #include <string>
-            
+
+LI_SYMBOL(date_of_birth)
+LI_SYMBOL(fight_skills)
+
 int main() {
   li::http_api my_api;
 
@@ -13,9 +18,9 @@ int main() {
    * API must return status code 201 - created with header "Location: /name/[:id]" where [:id] is the id
    * in UUID format of any version - from the client just created.  Body and return is at developer discretion.
    */
-  my_api.post("/url_params/{{name}}") = [&](li::http_request& request, li::http_response& response) {
-    auto params = request.url_parameters(s::name = std::string());
-    response.write("hello " + params.name);
+  my_api.post("/warrior") = [&](li::http_request& request, li::http_response& response) {
+    auto params = request.post_parameters(s::name = std::string(), s::date_of_birth = std::string(), s::fight_skills = std::string());
+    response.write("hello " + params.name + params.date_of_birth + params.fight_skills);
   };
 
   /* GET /warrior/[:id] - return warrior created with corresponding id;
