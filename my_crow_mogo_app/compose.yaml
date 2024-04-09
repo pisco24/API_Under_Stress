@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "18080:18080"
+    depends_on:
+      - db
+    environment:
+      MONGO_URI: mongodb://db:27017/mydatabase
+
+  db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_container:/data/db
+
+volumes:
+  mongodb_data_container:
