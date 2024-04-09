@@ -1,4 +1,4 @@
 # API_Under_Stress
 
-## Test_API
-Follow the README.md in the test_api folder.
+## My_Crow_Mongo_App
+Navigate into the "my_crow_mongo_app" folder and run the command "docker compose up -d"

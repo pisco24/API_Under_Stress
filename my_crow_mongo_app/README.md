@@ -6,4 +6,4 @@ You can try it out using the following command.
 
 ```docker compose up -d```
 
-And open http://localhost:18080 in your browser.
+After the docker compose command is complete open http://localhost:18080 in your browser.
