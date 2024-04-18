@@ -37,12 +37,12 @@ int main()
    * Return 200 - OK or 404 - Not Found
    */
 
-    //CROW_ROUTE(app, "/warrior/<>")
-      //([](const std::string& id){
-       //std::ostringstream os;
-       //os << "Id: " << id << "\n";
-      //return crow::response(os.str());
-    //});
+    CROW_ROUTE(app, "/warrior/<string>")
+      ([](std::string id){
+       std::ostringstream os;
+       os << "Id: " << id << "\n";
+      return crow::response(os.str());
+    });
 
 
   /* GET /warrior?t=[:search term] - search warrior attributes
