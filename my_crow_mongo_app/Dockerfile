@@ -1,5 +1,5 @@
 # Stage 1: Build the MongoDB C++ Driver
-FROM ubuntu:latest as mongocxx-builder
+FROM ubuntu:22.04 as mongocxx-builder
 WORKDIR /lib
 
 # Install MongoDB C Driver dependencies
@@ -33,7 +33,7 @@ RUN wget https://github.com/mongodb/mongo-cxx-driver/releases/download/r${MONGO_
 
 # Stage 2: Build Crow Application
 # Use Ubuntu as the base image
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 # Set the working directory
 WORKDIR /app
