@@ -63,6 +63,7 @@ RUN git clone https://github.com/CrowCpp/Crow.git && \
 
 # Copy your Crow application source code into the image
 COPY ./src /app/src
+COPY ./inc /app/inc
 
 # Compile your Crow application
 # Adjust the compilation command as needed, especially library paths if necessary
