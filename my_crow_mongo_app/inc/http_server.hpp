@@ -1,3 +1,5 @@
+#pragma once
+
 #include <sstream>
 
 #include "../Crow/include/crow.h"
@@ -29,7 +31,14 @@ class HttpServer {
         ([](std::string id){
          std::ostringstream os;
          os << "Id: " << id << "\n";
-         return crow::response(os.str());
+
+         crow::json::wvalue x ({
+             {"id", id},
+             {"name", "Master Yoda"},
+             {"dob", "1900-12-12"},
+             {"fight_skills", "blah blah"}
+          });
+         return x;
         });
 
       CROW_ROUTE(app, "/warrior")
@@ -39,7 +48,20 @@ class HttpServer {
        os << "Search term: " << req.url_params << "\n";
        os << "The key 't' was " << (req.url_params.get("t") == nullptr ? "not " : "") << "found.\n";
 
-       return crow::response(os.str());
+       crow::json::wvalue a({
+           {"name", "Bob"},
+           {"dob", "1999-12-12"},
+           {"fight_skills", "blah"}
+        });
+
+       crow::json::wvalue b({
+           {"name", "Sam"},
+           {"dob", "2000-01-01"},
+           {"fight_skills", "blahblah"}
+        });
+
+       crow::json::wvalue my_list(crow::json::wvalue::list({a, b}));
+       return my_list;
     });
 
       CROW_ROUTE(app, "/counting-warriors")
