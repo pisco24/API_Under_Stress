@@ -2,6 +2,9 @@
 
 #include <sstream>
 
+#include "SimpleJSON/json.hpp"
+#include "mongocxx/instance.hpp"
+#include "mongodb_handler.hpp"
 #include "../Crow/include/crow.h"
 
 class HttpServer {
@@ -19,12 +22,14 @@ class HttpServer {
          std::string dob = json_body["dob"].s();                             
          auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
-         os << "Name: " << name << "\n";
-         os << "DOB: " << dob << "\n";
-         os << "Fight Skills: ";
-         for (const auto& skill : fight_skills) { os << skill << " "; };
+         // os << "Name: " << name << "\n";
+         // os << "DOB: " << dob << "\n";
+         // os << "Fight Skills: ";
+         // for (const auto& skill : fight_skills) { os << skill << " "; };
 
-         return crow::response(os.str());
+         MongoDbHandler mhandler;
+         bool insert_successful = mhandler.addWarriortoDb(name, dob, fight_skills);
+         return insert_successful ? crow::response(200) : crow::response(400);
       });
 
       CROW_ROUTE(app, "/warrior/<string>")
@@ -66,7 +71,12 @@ class HttpServer {
 
       CROW_ROUTE(app, "/counting-warriors")
         ([](){
-         return "This should simply return the total number of registered warriors in the database.";
+         MongoDbHandler mhandler;
+         const json::JSON &all_documents = mhandler.GetAllDocuments();
+         std::ostringstream os;
+         os << all_documents;
+
+         return crow::response(os.str());
       });
 
     }

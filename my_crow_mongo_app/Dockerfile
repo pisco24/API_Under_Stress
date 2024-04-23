@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libsasl2-dev \
     git \
-    wget 
+    wget \
+    curl
 
 # Environment variables to define versions
 ENV MONGO_CXX_DRIVER_VERSION=3.10.1
@@ -27,6 +28,11 @@ RUN wget https://github.com/mongodb/mongo-cxx-driver/releases/download/r${MONGO_
     cmake --build . && \
     make install
 
+# Create the SimpleJSON directory and change the working directory to it
+WORKDIR /SimpleJSON
+
+# Download the json.hpp file from the specified URL into the SimpleJSON directory
+RUN curl https://raw.githubusercontent.com/nbsdx/SimpleJSON/master/json.hpp -o json.hpp
 
 # Optional: Compile your application with the MongoDB C++ Driver
 # RUN c++ --std=c++11 <input>.cpp $(pkg-config --cflags --libs libmongocxx)
