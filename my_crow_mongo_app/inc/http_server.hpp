@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-#include "SimpleJSON/json.hpp"
+#include <json.hpp>
 #include "mongocxx/instance.hpp"
 #include "mongodb_handler.hpp"
 #include "../Crow/include/crow.h"
