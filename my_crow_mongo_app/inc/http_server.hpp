@@ -13,11 +13,10 @@ class HttpServer {
 
     void setupRoutes() {
       CROW_ROUTE(app, "/warrior").methods("POST"_method)
-        ([](const crow::request& req, crow::response& res) {
+        ([](const crow::request& req) {
          auto json_body = crow::json::load(req.body);
          if (!json_body) {
-          res = crow::response(400);
-          return;
+          return crow::response(400);
          }
 
          std::ostringstream os;                     
@@ -26,18 +25,18 @@ class HttpServer {
          auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
          if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
-          res = crow::response(400);
-          return;
+          return crow::response(400);
          }
 
          MongoDbHandler mhandler;
          bool insert_successful = mhandler.addWarriortoDb(name, dob, fight_skills);
 
          if (!insert_successful) {
-          res = crow::response(400);
+          return crow::response(400);
          } else {
-          res.code = 201;
-          res.set_header("Location", "/name/id");
+           crow::response res(201);
+           res.add_header("Location", name);
+          return res;
          }
          
       });
