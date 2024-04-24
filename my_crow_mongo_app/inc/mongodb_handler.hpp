@@ -33,8 +33,15 @@ class MongoDbHandler{
                                    << "dob" << warrior_dob
                                    << "fight_skills" << bsoncxx::builder::stream::open_array;
 
+      int skill_ct = 0;
       for (const auto& skill : warrior_skills) {
-        array_builder << skill.s();
+        std::string skill_str = skill.s();
+        if (skill_str.length() > 250 || skill_ct > 20) {
+          return false;
+        } else {
+          array_builder << skill.s();
+          skill_ct++;
+        }
       }
 
       bsoncxx::v_noabi::document::value doc_value = array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
