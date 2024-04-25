@@ -35,7 +35,8 @@ class HttpServer {
           return crow::response(400);
          } else {
            crow::response res(201);
-           res.add_header("Location", name);
+           std::string loc("/name/" + name);
+           res.add_header("Location", loc);
           return res;
          }
          
