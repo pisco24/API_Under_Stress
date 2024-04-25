@@ -66,6 +66,10 @@ RUN git clone https://github.com/CrowCpp/Crow.git && \
     cmake .. -DCROW_BUILD_EXAMPLES=OFF -DCROW_BUILD_TESTS=OFF && \
     make install
 
+# Clone UUID v4 repo
+RUN git clone https://github.com/crashoz/uuid_v4 && \
+    cp uuid_v4/uuid_v4.h uuid_v4/endianness.h /usr/local/include/    
+
 # Copy your Crow application source code into the image
 COPY ./src /app/src
 COPY ./inc /app/inc
@@ -73,7 +77,7 @@ COPY ./inc /app/inc
 # Compile your Crow application
 # Adjust the compilation command as needed, especially library paths if necessary
 RUN g++ -std=c++17 -o mycrowapp /app/src/main.cpp  -I/usr/local/include/mongocxx/v_noabi -I/usr/local/include/bsoncxx/v_noabi -lboost_system -lpthread -lcrypto \
--lssl -lmongocxx -lbsoncxx
+-lssl -lmongocxx -lbsoncxx -mavx2
 
 # Expose the port your Crow application uses
 EXPOSE 18080

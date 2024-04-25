@@ -3,9 +3,12 @@
 #include <sstream>
 
 #include <json.hpp>
+#include <uuid_v4.h>
+#include <endianness.h>
 #include "mongocxx/instance.hpp"
 #include "mongodb_handler.hpp"
 #include "../Crow/include/crow.h"
+
 
 class HttpServer {
   public:
@@ -13,7 +16,7 @@ class HttpServer {
 
     void setupRoutes() {
       CROW_ROUTE(app, "/warrior").methods("POST"_method)
-        ([](const crow::request& req) {
+        ([this](const crow::request& req) {
          auto json_body = crow::json::load(req.body);
          if (!json_body) {
           return crow::response(400);
@@ -21,7 +24,8 @@ class HttpServer {
 
          std::ostringstream os;                     
          std::string name = json_body["name"].s();                          
-         std::string dob = json_body["dob"].s();                             
+         std::string dob = json_body["dob"].s();
+         std::string id = generateUUID(); 
          auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
          if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
@@ -29,13 +33,13 @@ class HttpServer {
          }
 
          MongoDbHandler mhandler;
-         bool insert_successful = mhandler.addWarriortoDb(name, dob, fight_skills);
+         bool insert_successful = mhandler.addWarriortoDb(id, name, dob, fight_skills);
 
          if (!insert_successful) {
           return crow::response(400);
          } else {
            crow::response res(201);
-           std::string loc("/name/" + name);
+           std::string loc("/name/" + id);
            res.add_header("Location", loc);
           return res;
          }
@@ -97,5 +101,13 @@ class HttpServer {
 
   private:
     crow::SimpleApp app;
+
+    UUIDv4::UUIDGenerator<std::mt19937_64> uuidGenerator;
+
+    std::string generateUUID() {
+      UUIDv4::UUID uuid = uuidGenerator.getUUID();
+      std::string s = uuid.str();
+      return s;
+    }
 
 };

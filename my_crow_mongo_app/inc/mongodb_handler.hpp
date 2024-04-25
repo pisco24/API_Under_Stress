@@ -25,11 +25,13 @@ class MongoDbHandler{
       db(client[kDatabaseName]) {}
 
 
-    bool addWarriortoDb(const std::string &warrior_name, const std::string &warrior_dob, const std::vector<crow::json::rvalue> &warrior_skills) {
+    bool addWarriortoDb(const std::string &warrior_id, const std::string &warrior_name, const std::string &warrior_dob, const std::vector<crow::json::rvalue> &warrior_skills) {
       mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
 
-      auto array_builder = builder << "name" << warrior_name
+      auto array_builder = builder << "_id" << 0
+                                   << "id" << warrior_id
+                                   << "name" << warrior_name
                                    << "dob" << warrior_dob
                                    << "fight_skills" << bsoncxx::builder::stream::open_array;
 
@@ -47,11 +49,8 @@ class MongoDbHandler{
       bsoncxx::v_noabi::document::value doc_value = array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
 
       try {
-        bsoncxx::stdx::optional<mongocxx::result::insert_one> maybe_result = collection.insert_one(doc_value.view());
-
-        if (maybe_result) {
-          return maybe_result->inserted_id().get_oid().value.to_string().size() != 0;
-        }
+        collection.insert_one(doc_value.view());
+        return true;
       } catch (const std::exception &e) {
         return false;
       }
