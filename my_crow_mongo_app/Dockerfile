@@ -1,4 +1,4 @@
-# Stage 2: Build the MongoDB C++ Driver
+# Stage 1: Build the MongoDB C++ Driver
 FROM ubuntu:22.04 as mongocxx-builder
 WORKDIR /lib
 
@@ -27,7 +27,7 @@ RUN wget https://github.com/mongodb/mongo-cxx-driver/releases/download/r${MONGO_
     cmake --build . && \
     make install
 
-# Optional: Compile your application with the MongoDB C++ Driver
+# Optional: Compile application with the MongoDB C++ Driver
 # RUN c++ --std=c++11 <input>.cpp $(pkg-config --cflags --libs libmongocxx)
 
 # Stage 2: Build Crow Application
@@ -52,7 +52,7 @@ RUN apt-get update && \
     wget \
     curl
 
-# Assuming you might still need MongoDB C++ Driver installed
+# Assuming we still need MongoDB C++ Driver installed
 COPY --from=mongocxx-builder /usr/local /usr/local
 
 ENV LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH
@@ -70,17 +70,16 @@ RUN git clone https://github.com/CrowCpp/Crow.git && \
 RUN git clone https://github.com/crashoz/uuid_v4 && \
     cp uuid_v4/uuid_v4.h uuid_v4/endianness.h /usr/local/include/    
 
-# Copy your Crow application source code into the image
+# Copy source and include files into the image
 COPY ./src /app/src
 COPY ./inc /app/inc
 
-# Compile your Crow application
-# Adjust the compilation command as needed, especially library paths if necessary
-RUN g++ -std=c++17 -o mycrowapp /app/src/main.cpp  -I/usr/local/include/mongocxx/v_noabi -I/usr/local/include/bsoncxx/v_noabi -lboost_system -lpthread -lcrypto \
+# Compile app
+RUN g++ -std=c++17 -o main /app/src/main.cpp -I/usr/local/include/mongocxx/v_noabi -I/usr/local/include/bsoncxx/v_noabi -lboost_system -lpthread -lcrypto \
 -lssl -lmongocxx -lbsoncxx -mavx2
 
-# Expose the port your Crow application uses
+# Expose the port required for Crow framework
 EXPOSE 18080
 
-# Command to run your Crow application
-CMD ["./mycrowapp"]
+# Run web server
+CMD ["./main"]

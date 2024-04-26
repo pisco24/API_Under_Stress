@@ -24,15 +24,11 @@ class MongoDbHandler{
     : uri(mongocxx::uri(kMongoDbUri)),
       client(mongocxx::client(uri)),
       db(client[kDatabaseName]) {
-        auto builder = bsoncxx::builder::stream::document{};
-        bsoncxx::v_noabi::document::value doc_value =
-          builder << "name" << 1 << bsoncxx::builder::stream::finalize;
-        mongocxx::options::index index_options{};
-        index_options.unique(true);
-        db[kCollectionName].create_index(doc_value.view(), index_options);
+        _indexing();
       }
 
-    bool addWarriortoDb(const std::string &warrior_id, const std::string &warrior_name, const std::string &warrior_dob, const std::vector<crow::json::rvalue> &warrior_skills) {
+    bool addWarriortoDb(const std::string &warrior_id, const std::string &warrior_name, 
+                        const std::string &warrior_dob, const std::vector<crow::json::rvalue> &warrior_skills) {
       mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
 
@@ -53,7 +49,8 @@ class MongoDbHandler{
         }
       }
 
-      bsoncxx::v_noabi::document::value doc_value = array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
+      bsoncxx::v_noabi::document::value doc_value = 
+        array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
 
       try {
         collection.insert_one(doc_value.view());
@@ -84,4 +81,16 @@ class MongoDbHandler{
     mongocxx::uri uri;
     mongocxx::client client;
     mongocxx::database db;
+
+    void _indexing() {
+      
+      // unique index to avoid duplicate entries based off warrior name
+      auto builder = bsoncxx::builder::stream::document{};
+      bsoncxx::v_noabi::document::value doc_value =
+        builder << "name" << 1 << bsoncxx::builder::stream::finalize;
+      mongocxx::options::index index_options{};
+      index_options.unique(true);
+      db[kCollectionName].create_index(doc_value.view(), index_options);
+ 
+    }
 };
