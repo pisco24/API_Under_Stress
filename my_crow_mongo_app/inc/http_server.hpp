@@ -15,6 +15,10 @@ class HttpServer {
     HttpServer() {}
 
     void setupRoutes() {
+      CROW_ROUTE(app, "/")([](){
+        return "Hello world";
+      });
+
       CROW_ROUTE(app, "/warrior").methods("POST"_method)
         ([this](const crow::request& req) {
          auto json_body = crow::json::load(req.body);
@@ -81,16 +85,16 @@ class HttpServer {
 
        crow::json::wvalue my_list(crow::json::wvalue::list({a, b}));
        return my_list;
-    });
+      });
 
       CROW_ROUTE(app, "/counting-warriors")
         ([](){
-         MongoDbHandler mhandler;
-         const json::JSON &all_documents = mhandler.GetAllDocuments();
-         std::ostringstream os;
-         os << all_documents;
+          MongoDbHandler mhandler;
+          const json::JSON &all_documents = mhandler.GetAllDocuments();
+          std::ostringstream os;
+          os << all_documents;
 
-         return crow::response(os.str());
+          return crow::response(os.str());
       });
 
     }
