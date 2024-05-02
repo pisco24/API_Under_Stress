@@ -70,7 +70,7 @@ class MongoDbHandler{
 
         // create the query document
         bsoncxx::builder::basic::document filter{};
-        filter.append(bsoncxx::builder::basic::kvp("_id", id));
+        filter.append(bsoncxx::builder::basic::kvp("id", id));
 
         // execute query
         auto maybe_result = coll.find_one(filter.view());

@@ -40,9 +40,9 @@ class HttpServer {
          bool insert_successful = mhandler.AddWarriortoDb(id, name, dob, fight_skills);
 
          if (!insert_successful) {
-          return crow::response(404);
+          return crow::response(400);
          } else {
-           crow::response res(200);
+           crow::response res(201);
            std::string loc("/name/" + id);
            res.add_header("Location", loc);
           return res;
