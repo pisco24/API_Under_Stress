@@ -46,6 +46,7 @@ class MongoDbHandler{
       for (const auto& skill : warrior_skills) {
         std::string skill_str = skill.s();
         if (skill_str.length() > 250 || skill_ct > 20) {
+          std::cerr << "Error: " << "skill string length" << std::endl;
           return false;
         } else {
           array_builder << skill.s();
@@ -60,6 +61,7 @@ class MongoDbHandler{
         collection.insert_one(doc_value.view());
         return true;
       } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
         return false;
       }
     }

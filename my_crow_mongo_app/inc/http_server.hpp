@@ -23,7 +23,7 @@ class HttpServer {
         ([this](const crow::request& req) {
          auto json_body = crow::json::load(req.body);
          if (!json_body) {
-          return crow::response(404);
+          return crow::response(400, "Invalid JSON format");
          }
 
          std::ostringstream os;                     
@@ -33,14 +33,14 @@ class HttpServer {
          auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
          if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
-          return crow::response(400);
+          return crow::response(400, "Bad Request: Invalid name or dob format");
          }
 
          MongoDbHandler mhandler;
          bool insert_successful = mhandler.AddWarriortoDb(id, name, dob, fight_skills);
 
          if (!insert_successful) {
-          return crow::response(400);
+          return crow::response(400, "Failed to insert warrior into database");
          } else {
            crow::response res(201);
            std::string loc("/name/" + id);
