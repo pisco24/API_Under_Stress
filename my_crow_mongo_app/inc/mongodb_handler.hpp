@@ -64,7 +64,7 @@ class MongoDbHandler{
       }
     }
 
-    json::JSON GetDocById(const std::string& id) {
+    crow::response GetDocById(const std::string& id) {
       try {
         mongocxx::collection coll = db[kCollectionName];
 
@@ -76,6 +76,8 @@ class MongoDbHandler{
         auto maybe_result = coll.find_one(filter.view());
         if (maybe_result) {
           std::string result = bsoncxx::to_json(maybe_result->view());
+          crow::response response{result};
+          response.add_header("Content-Type", "application/json");
           return crow::response{result};
         } else {
           return crow::response(404, "Not found");
@@ -85,8 +87,8 @@ class MongoDbHandler{
       }
     }
 
-    json::JSON SearchWarriors(const std::string& term) {
-      mmongocxx::collection coll = db[kCollectionName];
+    crow::response SearchWarriors(const std::string& term) {
+      mongocxx::collection coll = db[kCollectionName];
       try {
         auto filter = bsoncxx::builder::basic::make_document(
           bsoncxx::builder::basic::kvp("name", 
@@ -102,14 +104,15 @@ class MongoDbHandler{
         opts.limit(50);
         auto cursor = coll.find(filter.view(), opts);
 
-        // Prepare the JSON response
+        // prepare JSON response
         crow::json::wvalue results = crow::json::wvalue::list({});
+        size_t index = 0;
         for (const auto& doc : cursor) {
-          results.push_back(crow::json::load(bsoncxx::to_json(doc)));
+          results[index++] = crow::json::load(bsoncxx::to_json(doc));
         }
 
-        if (results.size() == 0) {
-          return crow::response(200, "[]");  // Always return 200, even if empty
+        if (index == 0) {
+          return crow::response(200, "[]"); // return empty array if no results
         }
 
         return crow::response{results};

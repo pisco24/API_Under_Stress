@@ -23,7 +23,7 @@ class HttpServer {
         ([this](const crow::request& req) {
          auto json_body = crow::json::load(req.body);
          if (!json_body) {
-          return crow::response(400);
+          return crow::response(404);
          }
 
          std::ostringstream os;                     
@@ -40,9 +40,9 @@ class HttpServer {
          bool insert_successful = mhandler.AddWarriortoDb(id, name, dob, fight_skills);
 
          if (!insert_successful) {
-          return crow::response(400);
+          return crow::response(404);
          } else {
-           crow::response res(201);
+           crow::response res(200);
            std::string loc("/name/" + id);
            res.add_header("Location", loc);
           return res;
@@ -51,30 +51,27 @@ class HttpServer {
       });
 
       CROW_ROUTE(app, "/warrior/<string>")
-      ([&](const std::string& id){
-
+      ([](const std::string& id){
         MongoDbHandler mhandler;
-        const json::JSON &document = mhandler.GetDocById(id);
-        std::ostringstream os;
-        os << document;
-
-        return crow::response(os.str());
+        return mhandler.GetDocById(id);
       });
 
       CROW_ROUTE(app, "/warrior")
-      ([&](const crow::request& req) {
-        std::string term = req.url_params.get("t");
-        if (!term) {
-          return crow::response(400, "Bad Request: No search term provided");
+      ([](const crow::request& req) {
+        const char* term_str = req.url_params.get("t");
+        if (!term_str) {
+          return crow::response(404, "Bad Request: No search term provided");
+        }
+
+        std::string term = std::string(term_str);
+        if (term.empty()) {
+          return crow::response(404, "Bad Request: Empty search term provided");
         }
 
         MongoDbHandler mhandler;
-        const json::JSON &search_results = mhandler.SearchWarriors(term);
-        std::ostringstream os;
-        os << search_results;
+        return mhandler.SearchWarriors(term);
+    });
 
-        return crow::response(os.str());
-      });
 
       CROW_ROUTE(app, "/counting-warriors")
       ([](){
