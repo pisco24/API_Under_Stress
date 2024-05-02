@@ -37,7 +37,7 @@ class HttpServer {
          }
 
          MongoDbHandler mhandler;
-         bool insert_successful = mhandler.addWarriortoDb(id, name, dob, fight_skills);
+         bool insert_successful = mhandler.AddWarriortoDb(id, name, dob, fight_skills);
 
          if (!insert_successful) {
           return crow::response(400);
@@ -51,50 +51,39 @@ class HttpServer {
       });
 
       CROW_ROUTE(app, "/warrior/<string>")
-        ([](std::string id){
-         std::ostringstream os;
-         os << "Id: " << id << "\n";
+      ([&](const std::string& id){
 
-         crow::json::wvalue x ({
-             {"id", id},
-             {"name", "Master Yoda"},
-             {"dob", "1900-12-12"},
-             {"fight_skills", "blah blah"}
-          });
-         return x;
-        });
+        MongoDbHandler mhandler;
+        const json::JSON &document = mhandler.GetDocById(id);
+        std::ostringstream os;
+        os << document;
+
+        return crow::response(os.str());
+      });
 
       CROW_ROUTE(app, "/warrior")
-      ([](const crow::request& req){
-       std::ostringstream os;
+      ([&](const crow::request& req) {
+        std::string term = req.url_params.get("t");
+        if (!term) {
+          return crow::response(400, "Bad Request: No search term provided");
+        }
 
-       os << "Search term: " << req.url_params << "\n";
-       os << "The key 't' was " << (req.url_params.get("t") == nullptr ? "not " : "") << "found.\n";
+        MongoDbHandler mhandler;
+        const json::JSON &search_results = mhandler.SearchWarriors(term);
+        std::ostringstream os;
+        os << search_results;
 
-       crow::json::wvalue a({
-           {"name", "Bob"},
-           {"dob", "1999-12-12"},
-           {"fight_skills", "blah"}
-        });
-
-       crow::json::wvalue b({
-           {"name", "Sam"},
-           {"dob", "2000-01-01"},
-           {"fight_skills", "blahblah"}
-        });
-
-       crow::json::wvalue my_list(crow::json::wvalue::list({a, b}));
-       return my_list;
+        return crow::response(os.str());
       });
 
       CROW_ROUTE(app, "/counting-warriors")
-        ([](){
-          MongoDbHandler mhandler;
-          const json::JSON &all_documents = mhandler.GetAllDocuments();
-          std::ostringstream os;
-          os << all_documents;
+      ([](){
+        MongoDbHandler mhandler;
+        const json::JSON &all_documents = mhandler.GetAllDocuments();
+        std::ostringstream os;
+        os << all_documents;
 
-          return crow::response(os.str());
+        return crow::response(os.str());
       });
 
     }

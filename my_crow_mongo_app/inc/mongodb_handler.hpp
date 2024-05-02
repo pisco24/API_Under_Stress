@@ -17,6 +17,10 @@ constexpr char kMongoDbUri[] = "mongodb://db:27017";
 constexpr char kDatabaseName[] = "warrior_db";
 constexpr char kCollectionName[] = "WarriorInfo";
 
+using bsoncxx::builder::basic::kvp;
+using bsoncxx::builder::basic::make_array;
+using bsoncxx::builder::basic::make_document;
+
 class MongoDbHandler{
   public:
 
@@ -27,7 +31,7 @@ class MongoDbHandler{
         _indexing();
       }
 
-    bool addWarriortoDb(const std::string &warrior_id, const std::string &warrior_name, 
+    bool AddWarriortoDb(const std::string &warrior_id, const std::string &warrior_name, 
                         const std::string &warrior_dob, const std::vector<crow::json::rvalue> &warrior_skills) {
       mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
@@ -60,9 +64,65 @@ class MongoDbHandler{
       }
     }
 
+    json::JSON GetDocById(const std::string& id) {
+      try {
+        mongocxx::collection coll = db[kCollectionName];
+
+        // create the query document
+        bsoncxx::builder::basic::document filter{};
+        filter.append(bsoncxx::builder::basic::kvp("_id", id));
+
+        // execute query
+        auto maybe_result = coll.find_one(filter.view());
+        if (maybe_result) {
+          std::string result = bsoncxx::to_json(maybe_result->view());
+          return crow::response{result};
+        } else {
+          return crow::response(404, "Not found");
+        }
+      } catch (const std::exception& e) {
+        return crow::response(500, std::string("Internal server error: ") + e.what());
+      }
+    }
+
+    json::JSON SearchWarriors(const std::string& term) {
+      mmongocxx::collection coll = db[kCollectionName];
+      try {
+        auto filter = bsoncxx::builder::basic::make_document(
+          bsoncxx::builder::basic::kvp("name", 
+            bsoncxx::builder::basic::make_document(
+              bsoncxx::builder::basic::kvp("$regex", term),
+              bsoncxx::builder::basic::kvp("$options", "i")
+            )
+          )
+        );
+
+        // execute query, limit to first 50 results
+        mongocxx::options::find opts;
+        opts.limit(50);
+        auto cursor = coll.find(filter.view(), opts);
+
+        // Prepare the JSON response
+        crow::json::wvalue results = crow::json::wvalue::list({});
+        for (const auto& doc : cursor) {
+          results.push_back(crow::json::load(bsoncxx::to_json(doc)));
+        }
+
+        if (results.size() == 0) {
+          return crow::response(200, "[]");  // Always return 200, even if empty
+        }
+
+        return crow::response{results};
+      } catch (const std::exception& e) {
+        // Handle exceptions from MongoDB or document conversion
+        return crow::response(500, std::string("Internal server error: ") + e.what());
+      }
+    }
+
+
     json::JSON GetAllDocuments() {
-      mongocxx::collection collection = db[kCollectionName];
-      mongocxx::cursor cursor = collection.find({});
+      mongocxx::collection coll = db[kCollectionName];
+      mongocxx::cursor cursor = coll.find({});
       json::JSON result;
       result["warriors"] = json::Array();
       if (cursor.begin() != cursor.end()) {
