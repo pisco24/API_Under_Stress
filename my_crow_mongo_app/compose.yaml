@@ -2,7 +2,7 @@ services:
   backend1:
     build: .
     ports:
-      - "18081:18080"
+      - "18080"
     depends_on:
       - db
     environment:
@@ -11,7 +11,7 @@ services:
   backend2:
     build: .
     ports:
-      - "18082:18080"
+      - "18081"
     depends_on:
       - db
     environment:
@@ -24,10 +24,10 @@ services:
     volumes:
       - mongodb_data_container:/data/db
 
-  frontend:
+  load_balancer:
     image: nginx:latest
     ports:
-      - "80:80"
+      - "8080:8080"
     depends_on:
       - backend1
       - backend2
