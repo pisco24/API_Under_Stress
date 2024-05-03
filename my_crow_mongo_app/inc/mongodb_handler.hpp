@@ -31,7 +31,7 @@ class MongoDbHandler{
         _indexing();
       }
 
-    bool AddWarriortoDb(const std::string &warrior_name, const std::string &warrior_dob, 
+    crow::response AddWarriortoDb(const std::string &warrior_name, const std::string &warrior_dob, 
                         const std::vector<crow::json::rvalue> &warrior_skills) {
       mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
@@ -44,8 +44,7 @@ class MongoDbHandler{
       for (const auto& skill : warrior_skills) {
         std::string skill_str = skill.s();
         if (skill_str.length() > 250 || skill_ct > 20) {
-          std::cerr << "Error: " << "skill string length" << std::endl;
-          return false;
+          return crow::response(400, "Bad request: Invalid skill string length or too many skills provided.");
         } else {
           // add skill check
           array_builder << skill.s();
@@ -57,11 +56,20 @@ class MongoDbHandler{
         array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
 
       try {
-        collection.insert_one(doc_value.view());
-        return true;
+        // execute query
+        auto maybe_result = collection.insert_one(doc_value.view());
+
+        // create response
+        if (maybe_result) {
+          auto id = maybe_result->inserted_id().get_oid().value.to_string();
+          crow::response response = crow::response(201, id);
+          response.add_header("Content-Type", "text/plain");
+          return response;
+        } else {
+          return crow::response(500, "Failed to insert document into database.");
+        }
       } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return false;
+        return crow::response(500, std::string("Internal server error: ") + e.what());
       }
     }
 
@@ -69,17 +77,25 @@ class MongoDbHandler{
       try {
         mongocxx::collection coll = db[kCollectionName];
 
+        // convert string id to ObjectId
+        bsoncxx::oid oid;
+        try {
+            oid = bsoncxx::oid{id};  // This might throw if the id is not a valid ObjectId
+        } catch (const std::exception& e) {
+            return crow::response(400, "Invalid ID format"); 
+        }
+
         // create the query document
         bsoncxx::builder::basic::document filter{};
-        filter.append(bsoncxx::builder::basic::kvp("id", id));
+        filter.append(bsoncxx::builder::basic::kvp("_id", oid));
 
         // execute query
         auto maybe_result = coll.find_one(filter.view());
+
+        // create response
         if (maybe_result) {
           std::string result = bsoncxx::to_json(maybe_result->view());
-          crow::response response{result};
-          response.add_header("Content-Type", "application/json");
-          return crow::response{result};
+          return crow::response{200, result};
         } else {
           return crow::response(404, "Not found");
         }
