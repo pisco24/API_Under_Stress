@@ -3,8 +3,6 @@
 #include <sstream>
 
 #include <json.hpp>
-// #include <uuid_v4.h>
-// #include <endianness.h>
 #include "mongocxx/instance.hpp"
 #include "mongodb_handler.hpp"
 #include "../Crow/include/crow.h"
@@ -60,7 +58,7 @@ class HttpServer {
 
         MongoDbHandler mhandler;
         return mhandler.SearchWarriors(term);
-    });
+      });
 
 
       CROW_ROUTE(app, "/counting-warriors")
