@@ -33,14 +33,14 @@ class HttpServer {
         return crow::response(400, "Bad Request: Invalid name or dob format");
         }
 
-        MongoDbHandler mhandler;
+        auto& mhandler = MongoDbHandler::getInstance();
         return mhandler.AddWarriortoDb(name, dob, fight_skills);
          
       });
 
       CROW_ROUTE(app, "/warrior/<string>")
       ([](const std::string& id){
-        MongoDbHandler mhandler;
+        auto& mhandler = MongoDbHandler::getInstance();
         return mhandler.GetDocById(id);
       });
 
@@ -56,14 +56,14 @@ class HttpServer {
           return crow::response(404, "Bad Request: Empty search term provided");
         }
 
-        MongoDbHandler mhandler;
+        auto& mhandler = MongoDbHandler::getInstance();
         return mhandler.SearchWarriors(term);
       });
 
 
       CROW_ROUTE(app, "/counting-warriors")
       ([](){
-        MongoDbHandler mhandler;
+        auto& mhandler = MongoDbHandler::getInstance();
         const json::JSON &all_documents = mhandler.GetAllDocuments();
         std::ostringstream os;
         os << all_documents;
