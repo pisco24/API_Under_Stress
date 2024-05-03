@@ -36,8 +36,7 @@ class MongoDbHandler{
       mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
 
-      auto array_builder = builder << "_id" << 0
-                                   << "id" << warrior_id
+      auto array_builder = builder << "id" << warrior_id
                                    << "name" << warrior_name
                                    << "dob" << warrior_dob
                                    << "fight_skills" << bsoncxx::builder::stream::open_array;
