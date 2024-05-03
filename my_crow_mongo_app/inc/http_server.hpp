@@ -29,7 +29,6 @@ class HttpServer {
          std::ostringstream os;                     
          std::string name = json_body["name"].s();                          
          std::string dob = json_body["dob"].s();
-         std::string id = generateUUID(); 
          auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
          if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
@@ -37,7 +36,7 @@ class HttpServer {
          }
 
          MongoDbHandler mhandler;
-         bool insert_successful = mhandler.AddWarriortoDb(id, name, dob, fight_skills);
+         bool insert_successful = mhandler.AddWarriortoDb(name, dob, fight_skills);
 
          if (!insert_successful) {
           return crow::response(400, "Failed to insert warrior into database");
@@ -91,13 +90,5 @@ class HttpServer {
 
   private:
     crow::SimpleApp app;
-
-    UUIDv4::UUIDGenerator<std::mt19937_64> uuidGenerator;
-
-    std::string generateUUID() {
-      UUIDv4::UUID uuid = uuidGenerator.getUUID();
-      std::string s = uuid.str();
-      return s;
-    }
 
 };
