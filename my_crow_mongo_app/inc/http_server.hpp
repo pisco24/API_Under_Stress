@@ -21,31 +21,22 @@ class HttpServer {
 
       CROW_ROUTE(app, "/warrior").methods("POST"_method)
         ([this](const crow::request& req) {
-         auto json_body = crow::json::load(req.body);
-         if (!json_body) {
-          return crow::response(400, "Invalid JSON format");
-         }
+        auto json_body = crow::json::load(req.body);
+        if (!json_body) {
+        return crow::response(400, "Invalid JSON format");
+        }
 
-         std::ostringstream os;                     
-         std::string name = json_body["name"].s();                          
-         std::string dob = json_body["dob"].s();
-         auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
+        std::ostringstream os;                     
+        std::string name = json_body["name"].s();                          
+        std::string dob = json_body["dob"].s();
+        auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
 
-         if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
-          return crow::response(400, "Bad Request: Invalid name or dob format");
-         }
+        if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
+        return crow::response(400, "Bad Request: Invalid name or dob format");
+        }
 
-         MongoDbHandler mhandler;
-         bool insert_successful = mhandler.AddWarriortoDb(name, dob, fight_skills);
-
-         if (!insert_successful) {
-          return crow::response(400, "Failed to insert warrior into database");
-         } else {
-           crow::response res(201);
-           std::string loc("/name/" + id);
-           res.add_header("Location", loc);
-          return res;
-         }
+        MongoDbHandler mhandler;
+        return mhandler.AddWarriortoDb(name, dob, fight_skills);
          
       });
 
