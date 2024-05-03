@@ -2,22 +2,22 @@ services:
   backend1:
     build: .
     ports:
-      - "18080"
+      - "18081:18081"
     depends_on:
       - db
     environment:
-      MONGO_URI: mongodb://db:27017
+      MONGO_URI: "mongodb://db:27017"
     networks:
       - crow-network
 
   backend2:
     build: .
     ports:
-      - "18081"
+      - "18082:18082"
     depends_on:
       - db
     environment:
-      MONGO_URI: mongodb://db:27017
+      MONGO_URI: "mongodb://db:27017"
     networks:
       - crow-network
 
