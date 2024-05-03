@@ -1,41 +1,42 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <iostream>
+#include <vector>
 
-#include <json.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/stdx.hpp>
+#include <mongocxx/uri.hpp>
+#include <mongocxx/exception/exception.hpp>
+#include "constants.hpp"
+
+// #include <json.hpp>
 #include "bsoncxx/builder/stream/document.hpp"
-#include "bsoncxx/json.hpp"
 #include "bsoncxx/oid.hpp"
-#include "mongocxx/client.hpp"
 #include "mongocxx/database.hpp"
-#include "mongocxx/uri.hpp"
 #include "../Crow/include/crow.h"
-
-constexpr char kMongoDbUri[] = "mongodb://db:27017";
-constexpr char kDatabaseName[] = "warrior_db";
-constexpr char kCollectionName[] = "WarriorInfo";
+// #include "constants.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_array;
 using bsoncxx::builder::basic::make_document;
 
-class MongoDbHandler{
+class MongoDbHandler {
   public:
+    static MongoDbHandler& getInstance() {
+      static MongoDbHandler instance;  // destroyed and instantiated on first use
+      return instance;
+    }
 
-    MongoDbHandler()
-    : uri(mongocxx::uri(kMongoDbUri)),
-      client(mongocxx::client(uri)),
-      db(client[kDatabaseName]) {
-        _indexing();
-      }
+    MongoDbHandler(MongoDbHandler const&) = delete;
+    void operator=(MongoDbHandler const&) = delete;
 
     crow::response AddWarriortoDb(const std::string &warrior_name, const std::string &warrior_dob, 
                         const std::vector<crow::json::rvalue> &warrior_skills) {
-      mongocxx::collection collection = db[kCollectionName];
       auto builder = bsoncxx::builder::stream::document{};
-
       auto array_builder = builder << "name" << warrior_name
                                    << "dob" << warrior_dob
                                    << "fight_skills" << bsoncxx::builder::stream::open_array;
@@ -75,12 +76,10 @@ class MongoDbHandler{
 
     crow::response GetDocById(const std::string& id) {
       try {
-        mongocxx::collection coll = db[kCollectionName];
-
         // convert string id to ObjectId
         bsoncxx::oid oid;
         try {
-            oid = bsoncxx::oid{id};  // This might throw if the id is not a valid ObjectId
+            oid = bsoncxx::oid{id};  // will throw if the id is not a valid ObjectId
         } catch (const std::exception& e) {
             return crow::response(400, "Invalid ID format"); 
         }
@@ -90,7 +89,7 @@ class MongoDbHandler{
         filter.append(bsoncxx::builder::basic::kvp("_id", oid));
 
         // execute query
-        auto maybe_result = coll.find_one(filter.view());
+        auto maybe_result = collection.find_one(filter.view());
 
         // create response
         if (maybe_result) {
@@ -105,13 +104,11 @@ class MongoDbHandler{
     }
 
     crow::response SearchWarriors(const std::string& term) {
-      mongocxx::collection coll = db[kCollectionName];
       try {
         auto filter = bsoncxx::builder::basic::make_document(
-          bsoncxx::builder::basic::kvp("name", 
+          bsoncxx::builder::basic::kvp("$text", 
             bsoncxx::builder::basic::make_document(
-              bsoncxx::builder::basic::kvp("$regex", term),
-              bsoncxx::builder::basic::kvp("$options", "i")
+              bsoncxx::builder::basic::kvp("$search", term)
             )
           )
         );
@@ -119,7 +116,7 @@ class MongoDbHandler{
         // execute query, limit to first 50 results
         mongocxx::options::find opts;
         opts.limit(50);
-        auto cursor = coll.find(filter.view(), opts);
+        auto cursor = collection.find(filter.view(), opts);
 
         // prepare JSON response
         crow::json::wvalue results = crow::json::wvalue::list({});
@@ -141,8 +138,7 @@ class MongoDbHandler{
 
 
     json::JSON GetAllDocuments() {
-      mongocxx::collection coll = db[kCollectionName];
-      mongocxx::cursor cursor = coll.find({});
+      mongocxx::cursor cursor = collection.find({});
       json::JSON result;
       result["warriors"] = json::Array();
       if (cursor.begin() != cursor.end()) {
@@ -153,24 +149,15 @@ class MongoDbHandler{
       return result["warriors"];
     }
 
-
-
-
-
   private:
+    MongoDbHandler()
+    : uri(mongocxx::uri(kMongoDbUri)),
+      client(mongocxx::client(uri)),
+      db(client[kDatabaseName]),
+      collection(db[kCollectionName]) {}
+
     mongocxx::uri uri;
     mongocxx::client client;
     mongocxx::database db;
-
-    void _indexing() {
-      
-      // unique index to avoid duplicate entries based off warrior name
-      auto builder = bsoncxx::builder::stream::document{};
-      bsoncxx::v_noabi::document::value doc_value =
-        builder << "name" << 1 << bsoncxx::builder::stream::finalize;
-      mongocxx::options::index index_options{};
-      index_options.unique(true);
-      db[kCollectionName].create_index(doc_value.view(), index_options);
- 
-    }
+    mongocxx::collection collection;
 };
