@@ -131,6 +131,15 @@ public:
       }
     }
 
+    crow::response CountDocuments() {
+        auto maybe_result = collection.count_documents({});
+        if (maybe_result) {
+            return crow::response(200, std::to_string(maybe_result));
+        } else {
+            return crow::response(500, "Failed to count documents.");
+        }
+    }
+
 
     json::JSON GetAllDocuments() {
       mongocxx::cursor cursor = collection.find({});
