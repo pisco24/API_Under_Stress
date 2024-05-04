@@ -19,23 +19,22 @@ public:
 
         CROW_ROUTE(app, "/warrior").methods("POST"_method)
             ([this](const crow::request& req) {
-            auto json_body = crow::json::load(req.body);
-            if (!json_body) {
-                return crow::response(400, "Invalid JSON format");
-            }
+            auto x = crow::json::load(req.body);
+            if (!x) return crow::response(400, "Invalid JSON format");
+
+            if (!x.has("name") || !x.has("dob") || !x.has("fight_skills"))
+                return crow::response(400, "Missing required JSON fields");
 
             std::ostringstream os;                     
-            std::string name = json_body["name"].s();                          
-            std::string dob = json_body["dob"].s();
-            auto fight_skills = const_cast<crow::json::rvalue&> (json_body["fight_skills"]).lo();
+            std::string name = x["name"].s();                          
+            std::string dob = x["dob"].s();
+            auto fight_skills = const_cast<crow::json::rvalue&> (x["fight_skills"]).lo();
 
-            if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-') {
+            if (name.length() > 100 || dob.length() != 10 || dob[4] != '-' || dob[7] != '-')
                 return crow::response(400, "Bad Request: Invalid name or dob format");
-            }
 
             auto& mhandler = MongoDbHandler::getInstance();
             return mhandler.AddWarriortoDb(name, dob, fight_skills);
-         
         });
 
         CROW_ROUTE(app, "/warrior/<string>")
@@ -47,14 +46,12 @@ public:
         CROW_ROUTE(app, "/warrior")
         ([](const crow::request& req) {
             const char* term_str = req.url_params.get("t");
-            if (!term_str) {
+            if (!term_str)
                 return crow::response(404, "Bad Request: No search term provided");
-            }
 
             std::string term = std::string(term_str);
-            if (term.empty()) {
+            if (term.empty()) 
                 return crow::response(404, "Bad Request: Empty search term provided");
-            }
 
             auto& mhandler = MongoDbHandler::getInstance();
             return mhandler.SearchWarriors(term);
@@ -62,6 +59,12 @@ public:
 
 
         CROW_ROUTE(app, "/counting-warriors")
+        ([](){
+            auto& mhandler = MongoDbHandler::getInstance();
+            return mhandler.CountDocuments();
+        });
+
+        CROW_ROUTE(app, "/all-warriors")
         ([](){
             auto& mhandler = MongoDbHandler::getInstance();
             const json::JSON &all_documents = mhandler.GetAllDocuments();
