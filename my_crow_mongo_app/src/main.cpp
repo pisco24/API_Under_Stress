@@ -1,5 +1,4 @@
 #include "../inc/http_server.hpp"
-// #include "../inc/mongodb_setup.hpp"
 
 int main()
 {
