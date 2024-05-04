@@ -2,10 +2,8 @@
 
 #include <sstream>
 
-#include <json.hpp>
 #include "mongocxx/instance.hpp"
 #include "mongodb_handler.hpp"
-#include "../Crow/include/crow.h"
 
 
 class HttpServer {
@@ -64,15 +62,15 @@ public:
             return mhandler.CountDocuments();
         });
 
-        CROW_ROUTE(app, "/all-warriors")
-        ([](){
-            auto& mhandler = MongoDbHandler::getInstance();
-            const json::JSON &all_documents = mhandler.GetAllDocuments();
-            std::ostringstream os;
-            os << all_documents;
+        // CROW_ROUTE(app, "/all-warriors")
+        // ([](){
+        //     auto& mhandler = MongoDbHandler::getInstance();
+        //     const json::JSON &all_documents = mhandler.GetAllDocuments();
+        //     std::ostringstream os;
+        //     os << all_documents;
 
-            return crow::response(os.str());
-        });
+        //     return crow::response(os.str());
+        // });
 
     }
 
