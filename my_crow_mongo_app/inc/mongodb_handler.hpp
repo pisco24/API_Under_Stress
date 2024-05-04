@@ -12,8 +12,6 @@
 #include <mongocxx/uri.hpp>
 #include <mongocxx/exception/exception.hpp>
 #include "constants.hpp"
-
-// #include <json.hpp>
 #include "bsoncxx/builder/stream/document.hpp"
 #include "bsoncxx/oid.hpp"
 #include "mongocxx/database.hpp"
@@ -31,8 +29,8 @@ class MongoDbHandler {
       return instance;
     }
 
-    MongoDbHandler(MongoDbHandler const&) = delete;
-    void operator=(MongoDbHandler const&) = delete;
+    MongoDbHandler(const MongoDbHandler&) = delete;
+    MongoDbHandler& operator=(const MongoDbHandler&) = delete;
 
     crow::response AddWarriortoDb(const std::string &warrior_name, const std::string &warrior_dob, 
                         const std::vector<crow::json::rvalue> &warrior_skills) {
@@ -56,6 +54,9 @@ class MongoDbHandler {
       bsoncxx::v_noabi::document::value doc_value = 
         array_builder << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
 
+      std::cout << "Attempting to insert document: " << bsoncxx::to_json(doc_value) << std::endl;
+
+
       try {
         // execute query
         auto maybe_result = collection.insert_one(doc_value.view());
@@ -63,10 +64,12 @@ class MongoDbHandler {
         // create response
         if (maybe_result) {
           auto id = maybe_result->inserted_id().get_oid().value.to_string();
+          std::cout << "Document inserted with ID: " << id << std::endl;
           crow::response response = crow::response(201, id);
           response.add_header("Content-Type", "text/plain");
           return response;
         } else {
+          std::cerr << "Document insert returned no result" << std::endl;
           return crow::response(500, "Failed to insert document into database.");
         }
       } catch (const std::exception &e) {
@@ -149,15 +152,179 @@ class MongoDbHandler {
       return result["warriors"];
     }
 
+    void CreateTextIndex() {
+      // create a text index on the name, dob and fight_skills fields
+      // this is more efficient since we are only using term based searches
+      try {
+        auto index_builder = bsoncxx::builder::stream::document{};
+        index_builder << "name" << "text"
+                    << "dob" << "text"
+                    << "fight_skills" << "text"
+                    << bsoncxx::builder::stream::finalize;
+
+        mongocxx::options::index index_options{};
+        index_options.background(true); // create the index in the background
+        index_options.name("TextIndexForSearch"); 
+
+        collection.create_index(index_builder.view(), index_options);
+
+        std::cout << "Index created successfully." << std::endl;    // TODO fix logging for docker
+      } catch (const mongocxx::exception& e) {
+        std::cerr << "Failed to create index: " << e.what() << std::endl;   // TODO fix logging for docker
+      }
+    }
+
   private:
-    MongoDbHandler()
-    : uri(mongocxx::uri(kMongoDbUri)),
-      client(mongocxx::client(uri)),
-      db(client[kDatabaseName]),
-      collection(db[kCollectionName]) {}
+    MongoDbHandler() {
+      try {
+        mongocxx::instance instance{}; 
+        uri = mongocxx::uri(kMongoDbUri);
+        client = mongocxx::client(uri);
+        db = client[kDatabaseName];
+        collection = db[kCollectionName];
+        
+        _FieldTemplate();
+        _CreateTextIndex();
+        _CreateUniqueIndex();
+
+      } catch (const mongocxx::exception& e) {
+        std::cerr << "MongoDB Setup Initialization Error: " << e.what() << std::endl;
+        // fallback logic ?
+      }
+    }
+
+    void _FieldTemplate() {
+      try {
+        // Only inserts this document if the collection is empty
+        if (collection.count_documents({}) == 0) {
+          auto builder = bsoncxx::builder::stream::document{};
+          auto doc_value = builder
+            << "name" << "John Doe"
+            << "dob" << "1980-01-01"
+            << "fight_skills" << bsoncxx::builder::stream::open_array
+            << "BJJ" << "KungFu" << "Judo"
+            << bsoncxx::builder::stream::close_array
+            << bsoncxx::builder::stream::finalize;
+
+          collection.insert_one(doc_value.view());
+          std::cout << "Initial document inserted and collection created with fields." << std::endl;
+        }
+      } catch (const mongocxx::exception& e) {
+        std::cerr << "Failed to create collection or insert initial document: " << e.what() << std::endl;
+      }
+    }
+
+    void _CreateTextIndex() {
+      // create a text index on the name, dob and fight_skills fields
+      // this is more efficient since we are only using term based searches
+      try {
+        auto index_builder = bsoncxx::builder::stream::document{};
+        index_builder << "$**" << "text"  // wildcard text index
+                      << bsoncxx::builder::stream::finalize;
+
+        mongocxx::options::index index_options{};
+        index_options.background(true); // create the index in the background
+        index_options.name("WildcardTextIndex"); 
+
+        collection.create_index(index_builder.view(), index_options);
+
+        std::cout << "WildcardTextIndex created successfully." << std::endl;    // TODO fix logging for docker
+      } catch (const mongocxx::exception& e) {
+        std::cerr << "Failed to create WildcardTextIndex: " << e.what() << std::endl;   // TODO fix logging for docker
+      }
+    }
+
+
+    void _CreateUniqueIndex() {
+      // create a separate unique index on the 'name' field to enforce uniqueness
+      try {
+        auto unique_index_builder = bsoncxx::builder::stream::document{};
+        unique_index_builder << "name" << 1 << bsoncxx::builder::stream::finalize;
+
+        mongocxx::options::index unique_index_options{};
+        unique_index_options.unique(true);
+        unique_index_options.name("UniqueIndexForName"); 
+
+        collection.create_index(unique_index_builder.view(), unique_index_options);
+
+        std::cout << "UniqueIndexForName created successfully." << std::endl;    // TODO fix logging for docker
+      } catch (const mongocxx::exception& e) {
+        std::cerr << "Failed to create UniqueIndexForName: " << e.what() << std::endl;   // TODO fix logging for docker
+      }
+    }
+
 
     mongocxx::uri uri;
     mongocxx::client client;
     mongocxx::database db;
     mongocxx::collection collection;
 };
+
+
+//   private:
+//     MongoDbHandler()
+//     : uri(mongocxx::uri(kMongoDbUri)),
+//       client(mongocxx::client(uri)),
+//       db(client[kDatabaseName]) {
+//         _field_template();
+//         _indexing();
+//       }
+
+//     void _field_template() {
+//       try {
+//             // create the collection if it does not exist
+//             auto collection = db.create_collection(kCollectionName);
+//             auto builder = bsoncxx::builder::stream::document{};
+//             bsoncxx::document::value doc_value = builder
+//                 << "name" << "John Doe"
+//                 << "dob" << "1980-01-01"
+//                 << "fight_skills" << bsoncxx::builder::stream::open_array
+//                 << "BJJ" << "KungFu" << "Judo"
+//                 << bsoncxx::builder::stream::close_array
+//                 << bsoncxx::builder::stream::finalize;
+                
+//             collection.insert_one(doc_value.view());
+
+//             std::cout << "Document inserted and collection created with fields." << std::endl;
+//         } catch (const mongocxx::exception& e) {
+//             std::cerr << "Failed to create collection: " << e.what() << std::endl;
+//         }
+//     }
+
+//     void _indexing() {
+//       // create a text index on the name, dob and fight_skills fields
+//       // this is more efficient since we are only using term based searches
+//       try {
+//         auto index_builder = bsoncxx::builder::stream::document{};
+//         index_builder << "name" << "text"
+//                     << "dob" << "text"
+//                     << "fight_skills" << "text"
+//                     << bsoncxx::builder::stream::finalize;
+
+//         mongocxx::options::index index_options{};
+//         index_options.background(true); // create the index in the background
+//         index_options.name("TextIndexForSearch"); 
+
+//         collection.create_index(index_builder.view(), index_options);
+
+//         // create a separate unique index on the 'name' field to enforce uniqueness
+//         auto unique_index_builder = bsoncxx::builder::stream::document{};
+//         unique_index_builder << "name" << 1 << bsoncxx::builder::stream::finalize;
+
+//         mongocxx::options::index unique_index_options{};
+//         unique_index_options.unique(true);
+//         unique_index_options.name("UniqueIndexForName"); 
+
+//         collection.create_index(unique_index_builder.view(), unique_index_options);
+
+//         std::cout << "Index created successfully." << std::endl;    // TODO fix logging for docker
+//       } catch (const mongocxx::exception& e) {
+//         std::cerr << "Failed to create index: " << e.what() << std::endl;   // TODO fix logging for docker
+//       }
+//     }
+
+//     mongocxx::uri uri;
+//     mongocxx::client client;
+//     mongocxx::database db;
+//     mongocxx::collection collection;
+// };
