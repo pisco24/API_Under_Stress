@@ -2,7 +2,7 @@ services:
   backend1:
     build: .
     ports:
-      - "18081:18081"
+      - "18081:18080"
     depends_on:
       - db
     environment:
@@ -13,7 +13,7 @@ services:
   backend2:
     build: .
     ports:
-      - "18082:18082"
+      - "18082:18080"
     depends_on:
       - db
     environment:
