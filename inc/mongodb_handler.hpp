@@ -67,15 +67,16 @@ public:
 
             if (maybe_result) {
                 auto id = maybe_result->inserted_id().get_oid().value.to_string();
-                crow::response response = crow::response(201, id);
-                response.add_header("Content-Type", "text/plain");
+                crow::response response = crow::response(201);
+                std::string loc("/name/" + id);
+                response.add_header("Location", loc);
                 return response;
             } else {
-                return crow::response(500, "Failed to insert doc into db.");
+                return crow::response(400, "Failed to insert doc into db.");
             }
         } catch (const std::exception &e) {
             std::string error = std::string("Internal server error: ") + e.what();
-            return crow::response(500, error);
+            return crow::response(400, error);
         }
     }
 
@@ -103,7 +104,7 @@ public:
                 return crow::response(404, "Not found");
             }
         } catch (const std::exception& e) {
-            return crow::response(500, std::string("Internal server error: ") + e.what());
+            return crow::response(404, std::string("Internal server error: ") + e.what());
         }
         }
 
@@ -133,7 +134,7 @@ public:
 
         return crow::response{results};
       } catch (const std::exception& e) {
-        return crow::response(500, std::string("Internal server error: ") + e.what());
+        return crow::response(400, std::string("Internal server error: ") + e.what());
       }
     }
 
@@ -142,22 +143,9 @@ public:
         if (maybe_result) {
             return crow::response(200, std::to_string(maybe_result));
         } else {
-            return crow::response(500, "Failed to count documents.");
+            return crow::response(400, "Failed to count documents.");
         }
     }
-
-
-    // json::JSON GetAllDocuments() {
-    //   mongocxx::cursor cursor = collection.find({});
-    //   json::JSON result;
-    //   result["warriors"] = json::Array();
-    //   if (cursor.begin() != cursor.end()) {
-    //       for (auto doc : cursor) {
-    //       result["warriors"].append(bsoncxx::to_json(doc));
-    //       }
-    //     }
-    //   return result["warriors"];
-    // }
 
     bool isValidSkill(const std::string& skill) {
         return valid_skills.find(skill) != valid_skills.end();
