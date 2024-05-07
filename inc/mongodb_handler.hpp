@@ -69,7 +69,7 @@ public:
             if (maybe_result) {
                 auto id = maybe_result->inserted_id().get_oid().value.to_string();
                 crow::response response = crow::response(201);
-                response.add_header("location", ":8080/warrior/" + id);
+                response.add_header("Location", ":8080/warrior/" + id);
                 return response;
             } else {
                 return crow::response(400, "Failed to insert doc into db.");
