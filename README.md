@@ -8,9 +8,11 @@ service disruption and consistent performance.
 
 ## Stack/Technologies
 
-We decided on using the Crow web framework (https://crowcpp.org/master/) for C++ and MongoDB for our database.  
-Nginx was used as the load balancer between the two web server instances and everything was given its own Docker
-container.
+- Crow web framework (https://crowcpp.org/master/) for C++ 
+- MongoDB
+- Nginx (load balancer between the two web server instances) 
+- Docker
+- Gatling (https://gatling.io/) used to perform stress tests on the API.
 
 ## Usage
 
@@ -24,25 +26,25 @@ Assuming you have Docker Engine installed and running, run these docker commands
 docker compose build
 docker compose up -d
 ```
-
 The API should be running (in Docker containers) now.
 
-There are four endpoints for this API:
 
-POST /warrior – creates warrior, request body includes data for the warrior in a JSON format, all listed fields are mandatory:
+# There are four endpoints for this API:
+
+- POST /warrior – creates warrior, request body includes data for the warrior in a JSON format, all listed fields are mandatory:
     - name, string max 100 characters.
     - dob (Date of Birth), string to date in format AAAA-DD-MM (year, day, month).
     - fight_skills, list/array with max 20 entries of strings max 250 characters
-Response header returns a unique url w/ id that can be used with the GET /warrior/[:id] endpoint. 
+    Response header returns a unique url w/ id that can be used with the GET /warrior/[:id] endpoint. 
 
-GET /warrior/[:id] – returns warrior created with corresponding id
+- GET /warrior/[:id] – returns warrior created with corresponding id
 
-GET /warrior?t=[:search term] – searches warrior attributes
+- GET /warrior?t=[:search term] – searches warrior attributes
 
-GET /counting-warriors – returns number of warriors that are in the database;
+- GET /counting-warriors – returns number of warriors that are in the database;
 
 
-Examples:
+# Examples:
 
 Request to POST /warrior endpoint:
 ```
@@ -63,5 +65,6 @@ Request to GET /counting-warriors endpoint:
 curl -v http://localhost:8080/counting-warriors
 ```
 
-Gatling (https://gatling.io/) was utilized for stress testing the API.  
+## Results
+
 Actual results may vary depending on operating system, hardware, etc.
