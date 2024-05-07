@@ -45,11 +45,11 @@ public:
         ([](const crow::request& req) {
             const char* term_str = req.url_params.get("t");
             if (!term_str)
-                return crow::response(404, "Bad Request: No search term provided");
+                return crow::response(400, "Bad Request: No search term provided");
 
             std::string term = std::string(term_str);
             if (term.empty()) 
-                return crow::response(404, "Bad Request: Empty search term provided");
+                return crow::response(400, "Bad Request: Empty search term provided");
 
             auto& mhandler = MongoDbHandler::getInstance();
             return mhandler.SearchWarriors(term);
