@@ -68,8 +68,8 @@ public:
             if (maybe_result) {
                 auto id = maybe_result->inserted_id().get_oid().value.to_string();
                 crow::response response = crow::response(201);
-                std::string loc("/warrior/" + id);
-                response.add_header("Location", loc);
+                std::string loc(":8080/warrior/" + id);
+                response.add_header("location", loc);
                 return response;
             } else {
                 return crow::response(400, "Failed to insert doc into db.");
