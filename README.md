@@ -29,7 +29,7 @@ docker compose up -d
 The API should be running (in Docker containers) now.
 
 
-# There are four endpoints for this API:
+### There are four endpoints for this API:
 
 - POST /warrior – creates warrior, request body includes data for the warrior in a JSON format, all listed fields are mandatory:
     - name, string max 100 characters.
@@ -44,7 +44,7 @@ The API should be running (in Docker containers) now.
 - GET /counting-warriors – returns number of warriors that are in the database;
 
 
-# Examples:
+### Examples:
 
 Request to POST /warrior endpoint:
 ```
