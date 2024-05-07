@@ -35,51 +35,49 @@ public:
     MongoDbHandler(const MongoDbHandler&) = delete;
     MongoDbHandler& operator=(const MongoDbHandler&) = delete;
 
-
     crow::response AddWarriortoDb(const std::string &warrior_name, 
-                const std::string &warrior_dob, 
-                const std::vector<crow::json::rvalue> &warrior_skills) {
-        auto builder = bsoncxx::builder::stream::document{};
-        auto array_builder = builder << "name" << warrior_name
-                                << "dob" << warrior_dob
-                                << "fight_skills" 
-                                << bsoncxx::builder::stream::open_array;
-
-        int skill_ct = 0;
-        int skill_len = 0;
+                    const std::string &warrior_dob, 
+                    const std::vector<crow::json::rvalue> &warrior_skills) {
+        int total_skill_length = 0;
         for (const auto& skill : warrior_skills) {
-            if (!isValidSkill(skill.s()) || skill_len > 250 || skill_ct > 20) {
+            if (!isValidSkill(skill.s())) {
                 return crow::response(400, "Invalid skills.");
-            } else {
-                array_builder << skill.s();
-                skill_ct++;
-                std::string skill_str = skill.s();
-                skill_len += skill_str.length();
+            }
+            total_skill_length += skill.s().length();
+            if (total_skill_length > 250 || warrior_skills.size() > 20) {
+                return crow::response(400, "Skill data exceeds limits.");
             }
         }
 
-        bsoncxx::v_noabi::document::value doc_value = array_builder 
-            << bsoncxx::builder::stream::close_array 
+        bsoncxx::builder::stream::document builder{};
+        bsoncxx::builder::stream::array array_builder{};
+
+        for (const auto& skill : warrior_skills) {
+            array_builder << skill.s();
+        }
+
+        bsoncxx::v_noabi::document::value doc_value = builder
+            << "name" << warrior_name
+            << "dob" << warrior_dob
+            << "fight_skills" << array_builder
             << bsoncxx::builder::stream::finalize;
 
         try {
             auto maybe_result = collection.insert_one(doc_value.view());
-
             if (maybe_result) {
                 auto id = maybe_result->inserted_id().get_oid().value.to_string();
                 crow::response response = crow::response(201);
-                std::string loc(":8080/warrior/" + id);
-                response.add_header("location", loc);
+                response.add_header("location", ":8080/warrior/" + id);
                 return response;
             } else {
                 return crow::response(400, "Failed to insert doc into db.");
             }
         } catch (const std::exception &e) {
-            std::string error = std::string("Internal server error: ") + e.what();
-            return crow::response(400, error);
+            return crow::response(500, std::string("Internal server error: ") + e.what());
         }
     }
 
+ 
     crow::response GetDocById(const std::string& id) {
         try {
             bsoncxx::oid oid;
@@ -106,7 +104,7 @@ public:
         } catch (const std::exception& e) {
             return crow::response(404, std::string("Internal server error: ") + e.what());
         }
-        }
+    }
 
     crow::response SearchWarriors(const std::string& term) {
       try {
@@ -237,3 +235,48 @@ public:
     mongocxx::database db;
     mongocxx::collection collection;
 };
+
+
+   // crow::response AddWarriortoDb(const std::string &warrior_name, 
+    //             const std::string &warrior_dob, 
+    //             const std::vector<crow::json::rvalue> &warrior_skills) {
+    //     auto builder = bsoncxx::builder::stream::document{};
+    //     auto array_builder = builder << "name" << warrior_name
+    //                             << "dob" << warrior_dob
+    //                             << "fight_skills" 
+    //                             << bsoncxx::builder::stream::open_array;
+
+    //     int skill_ct = 0;
+    //     int skill_len = 0;
+    //     for (const auto& skill : warrior_skills) {
+    //         if (!isValidSkill(skill.s()) || skill_len > 250 || skill_ct > 20) {
+    //             return crow::response(400, "Invalid skills.");
+    //         } else {
+    //             array_builder << skill.s();
+    //             skill_ct++;
+    //             std::string skill_str = skill.s();
+    //             skill_len += skill_str.length();
+    //         }
+    //     }
+
+    //     bsoncxx::v_noabi::document::value doc_value = array_builder 
+    //         << bsoncxx::builder::stream::close_array 
+    //         << bsoncxx::builder::stream::finalize;
+
+    //     try {
+    //         auto maybe_result = collection.insert_one(doc_value.view());
+
+    //         if (maybe_result) {
+    //             auto id = maybe_result->inserted_id().get_oid().value.to_string();
+    //             crow::response response = crow::response(201);
+    //             std::string loc(":8080/warrior/" + id);
+    //             response.add_header("location", loc);
+    //             return response;
+    //         } else {
+    //             return crow::response(400, "Failed to insert doc into db.");
+    //         }
+    //     } catch (const std::exception &e) {
+    //         std::string error = std::string("Internal server error: ") + e.what();
+    //         return crow::response(400, error);
+    //     }
+    // }
