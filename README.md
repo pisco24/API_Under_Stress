@@ -6,11 +6,16 @@ To design, develop, and test a resilient API that can effectively handle high lo
 unexpected spikes in traffic, and various types of stress scenarios, ensuring minimal
 service disruption and consistent performance.
 
+## Constraints
+
+- CPU Constraints: 1.5 CPUs
+- Memory Constraints: 3.0 GB
+
 ## Stack/Technologies
 
 - Crow web framework (https://crowcpp.org/master/) for C++ 
 - MongoDB
-- Nginx (load balancer between the two web server instances) 
+- Nginx (load balancer) 
 - Docker
 - Gatling (https://gatling.io/) used to perform stress tests on the API.
 
@@ -44,23 +49,23 @@ The API should be running (in Docker containers) now.
 - GET /counting-warriors – returns number of warriors that are in the database;
 
 
-### Examples:
+### Examples (using curl):
 
-Request to POST /warrior endpoint:
+POST /warrior endpoint:
 ```
 curl -v http://localhost:8080/warrior -H 'Content-Type: application/json' -d '{"name":"Muhammed Ali","dob":"1942-01-17", "fight_skills":["Boxing"]}'
 ```
 
-Request to GET /warrior/[:id] endpoint:
+GET /warrior/[:id] endpoint:
 ```
 curl -v http://localhost:8080/warrior/6639ae4150fedcddb10501bd
 ```
-Request to GET /warrior?t="Boxing" endpoint:
+GET /warrior?t=[:search_term]:
 ```
 curl -v http://localhost:8080/warrior?t=Boxing
 ```
 
-Request to GET /counting-warriors endpoint:
+GET /counting-warriors:
 ```
 curl -v http://localhost:8080/counting-warriors
 ```
