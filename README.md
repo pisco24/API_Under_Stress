@@ -73,6 +73,6 @@ curl -v http://localhost:8080/counting-warriors
 ## Results
 
 #### Stress test results produced by Gatling:
-[2024-05-07 17:32:18 GMT](https://html-preview.github.io/?url=https://github.com/pisco24/API_Under_Stress/blob/beki/iterate-api/sample_result/index.html)
+[2024-05-07 17:32:18 GMT](https://htmlpreview.github.io/?https://github.com/pisco24/API_Under_Stress/blob/main/sample_result/index.html)
 
 Note: Actual results may vary depending on operating system, hardware, etc.
